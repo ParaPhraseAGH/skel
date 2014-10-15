@@ -3,7 +3,7 @@ skel
 
 A Streaming Process-based Skeleton Library for Erlang
 
-[![Build Status](https://travis-ci.org/ParaPhrase/skel.png)](https://travis-ci.org/ParaPhrase/skel)
+[![Build Status](https://travis-ci.org/ParaPhraseAGH/skel.svg?branch=develop)](https://travis-ci.org/ParaPhraseAGH/skel)
 
 Usage
 ------
