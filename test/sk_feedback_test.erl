@@ -6,7 +6,7 @@
 -compile(export_all).
 
 simple_example_of_feedback_usage_test()->
-    ?assertSameDataInside( [ 5,5,5,5,5,6,7,8,9,10 ],
+    ?assertSameDataInside( [ 5,5,5,5,5,6,7,8,9,10,11 ],
                            skel:do( [{ feedback,
                                        [ fun (X) -> X+1 end],
                                        fun (X) -> X<5 end }] ,
