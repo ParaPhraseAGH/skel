@@ -3,24 +3,23 @@
 
 -export([
          start/2,
-         init/2,
+         init/3,
          loop/3
         ]).
 
 
 
 start(Workflow, Combiner) ->
-  proc_lib:spawn(?MODULE, init, [Workflow, Combiner]).
+  Source = self(),
+  proc_lib:spawn(?MODULE, init, [Source, Workflow, Combiner]).
 
 
 
-init(Workflow, Combiner) ->
-  Worker = sk_utils:start_worker(Workflow, _SendBack = self()),
-  proc_lib:spawn(?MODULE, loop, [_Source = self(),
-                                 Worker,
-                                 Combiner]).
-
-
+init(Source, Workflow, Combiner) ->
+  Worker = sk_assembler:make(Workflow, _SendBack = self()),
+  loop(Source,
+       Worker,
+       Combiner).
 
 
 loop(Source, Worker, Combiner) ->

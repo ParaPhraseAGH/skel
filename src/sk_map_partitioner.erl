@@ -31,7 +31,7 @@
 %% Privete exports
 -export([
          loop_auto/4,
-         loop_pull_init/1,
+         loop_pull_init/3,
          loop/2
         ]).
 
@@ -60,11 +60,9 @@ start(auto, WorkFlow, CombinerPid) ->
 
 -spec start(atom(), workflow(), pos_integer(), pid()) -> pid().
 start(man, WorkFlow, NWorkers, CombinerPid) ->
-  WorkerPids = [sk_map_pulling_worker:start(WorkFlow, CombinerPid) || %% TODO started from wrong process
-                 _ <- lists:seq(1,NWorkers)],
   sk_tracer:t(75, self(), {?MODULE, start}, [{combiner, CombinerPid}]),
   %% proc_lib:spawn(?MODULE, loop, [decomp_by(), WorkerPids]).
-  proc_lib:spawn(?MODULE, loop_pull_init, [WorkerPids]).
+  proc_lib:spawn(?MODULE, loop_pull_init, [WorkFlow, NWorkers, CombinerPid]).
 
 -spec start( pos_integer(), pos_integer(), workflow(), workflow(), pid()) -> pid().
 start(NCPUWorkers, NGPUWorkers, WorkFlowCPU, WorkFlowGPU, CombinerPid) ->
@@ -111,7 +109,10 @@ loop(DataPartitionerFun, WorkerPids) ->
     end.
 
 
-loop_pull_init(AllWorkers) ->
+loop_pull_init(WorkFlow, NWorkers, CombinerPid) ->
+  AllWorkers = [sk_map_pulling_worker:start(WorkFlow, CombinerPid) || 
+                 _ <- lists:seq(1,NWorkers)],
+
   loop_pull([], [], AllWorkers).
 
 loop_pull(WorkData, WatingWorkers, AllWorkers) ->
@@ -119,14 +120,42 @@ loop_pull(WorkData, WatingWorkers, AllWorkers) ->
   receive
     {give_me_work, Worker} ->
       loop_pull(WorkData2, [Worker | WatingWorkers2], AllWorkers);
-    {data, Data, Idx} ->
-      NewData = [{data, X, Idx} || X <- Data],
+    {data, _, _}  = DataMessage ->
+      NewData = partition(DataMessage),
       loop_pull(WorkData2 ++ NewData, WatingWorkers2, AllWorkers);
     {system, eos} ->
-      sk_utils:stop_workers(?MODULE, AllWorkers),
-      eos
+      loop_pull_finish(WorkData2, WatingWorkers2, AllWorkers)
+    end.
+
+
+loop_pull_finish([], _, AllWorkers) -> 
+  sk_utils:stop_workers(?MODULE, AllWorkers),
+  eos;
+
+loop_pull_finish(WorkData, WatingWorkers, AllWorkers) ->
+  {WorkData2, WatingWorkers2} =
+    send_data_to_workers(WorkData, WatingWorkers),
+  receive
+    {give_me_work, Worker} ->
+      loop_pull_finish(WorkData2, [Worker | WatingWorkers2], AllWorkers)
   end.
 
+
+partition({data, Data, Idx}) ->
+  DataMessages = [{data, X, Idx} || X <- Data],
+  Ref = make_ref(),
+  MessageCount = length(Data),
+  {_, List} = lists:foldr( 
+                fun(OneMessage, {Counter, Acc} ) ->
+                    {Counter + 1,
+                     [sk_data:push({decomp, 
+                                    Ref,
+                                    Counter,
+                                    MessageCount}, OneMessage) | Acc]}
+                end, 
+                _CountFrom = {1, []},
+                DataMessages),
+  List.
 
 send_data_to_workers([Data | Datas], [Worker| Workers]) ->
   Worker ! Data,
