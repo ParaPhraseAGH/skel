@@ -59,9 +59,13 @@ start(auto, WorkFlow, CombinerPid) ->
   proc_lib:spawn( ?MODULE, loop_auto, [decomp_by(), WorkFlow, CombinerPid, []]).
 
 -spec start(atom(), workflow(), pos_integer(), pid()) -> pid().
-start(man, WorkFlow, NWorkers, CombinerPid) ->
+start(man , WorkFlow, NWorkers, CombinerPid) ->
   sk_tracer:t(75, self(), {?MODULE, start}, [{combiner, CombinerPid}]),
-  %% proc_lib:spawn(?MODULE, loop, [decomp_by(), WorkerPids]).
+  WorkerPids = sk_utils:start_workers(NWorkers, WorkFlow, CombinerPid),
+  proc_lib:spawn(?MODULE, loop, [decomp_by(), WorkerPids]);
+
+start(pull , WorkFlow, NWorkers, CombinerPid) ->
+  sk_tracer:t(75, self(), {?MODULE, start}, [{combiner, CombinerPid}]),
   proc_lib:spawn(?MODULE, loop_pull_init, [WorkFlow, NWorkers, CombinerPid]).
 
 -spec start( pos_integer(), pos_integer(), workflow(), workflow(), pid()) -> pid().
@@ -110,7 +114,7 @@ loop(DataPartitionerFun, WorkerPids) ->
 
 
 loop_pull_init(WorkFlow, NWorkers, CombinerPid) ->
-  AllWorkers = [sk_map_pulling_worker:start(WorkFlow, CombinerPid) || 
+  AllWorkers = [sk_map_pulling_worker:start(WorkFlow, CombinerPid) ||
                  _ <- lists:seq(1,NWorkers)],
 
   loop_pull([], [], AllWorkers).
@@ -128,7 +132,7 @@ loop_pull(WorkData, WatingWorkers, AllWorkers) ->
     end.
 
 
-loop_pull_finish([], _, AllWorkers) -> 
+loop_pull_finish([], _, AllWorkers) ->
   sk_utils:stop_workers(?MODULE, AllWorkers),
   eos;
 
@@ -145,14 +149,14 @@ partition({data, Data, Idx}) ->
   DataMessages = [{data, X, Idx} || X <- Data],
   Ref = make_ref(),
   MessageCount = length(Data),
-  {_, List} = lists:foldr( 
+  {_, List} = lists:foldl(
                 fun(OneMessage, {Counter, Acc} ) ->
                     {Counter + 1,
-                     [sk_data:push({decomp, 
+                     [sk_data:push({decomp,
                                     Ref,
                                     Counter,
                                     MessageCount}, OneMessage) | Acc]}
-                end, 
+                end,
                 _CountFrom = {1, []},
                 DataMessages),
   List.
