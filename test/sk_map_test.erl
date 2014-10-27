@@ -35,8 +35,8 @@ map_can_be_given_number_of_workers_as_parameter_test()  ->
            [2,3],
            [10, 20, 30 ]],
   Expected = [[0],
-              [4,6],
-              [20, 40, 60 ] ],
+              [6,4],
+              [60, 40, 20]],
 
   ?assertSameDataInside( Expected,
                          skel:do( [{ map, [ fun double/1 ], _NumberOfWorkers = 8}],
