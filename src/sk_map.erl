@@ -82,17 +82,16 @@
 %% their Pids passed to a {@link sk_map_partitioner} process.
 start({WorkFlow}, NextPid) ->
   CombinerPid = proc_lib:spawn(sk_map_combiner, start, [NextPid]),
-  sk_map_partitioner:start(auto, WorkFlow, CombinerPid);
+  sk_map_auto_partitioner:start(WorkFlow, CombinerPid);
 
 start({WorkFlow, NWorkers}, NextPid) ->
   CombinerPid = proc_lib:spawn(sk_map_combiner, start, [NextPid, NWorkers]),
-  sk_map_partitioner:start(man, WorkFlow, NWorkers, CombinerPid);
-
+  sk_map_man_partitioner:start(WorkFlow, NWorkers, CombinerPid);
 
 
 start({WorkFlow, NWorkers, pull}, NextPid) ->
   CombinerPid = proc_lib:spawn(sk_map_combiner, start, [NextPid, NWorkers]),
-  sk_map_partitioner:start(pull,WorkFlow, NWorkers, CombinerPid);
+  sk_map_pull_partitioner:start(WorkFlow, NWorkers, CombinerPid);
 
 %% @doc Initialises an instance of the Hybrid Map skeleton ready to receive inputs,
 %% using a given number of CPU and GPU worker processes. These numbers are specified under
@@ -104,4 +103,4 @@ start({WorkFlow, NWorkers, pull}, NextPid) ->
 %% their Pids passed to a {@link sk_map_partitioner} process.
 start({WorkFlowCPU, NCPUWorkers, WorkFlowGPU, NGPUWorkers}, NextPid) ->
   CombinerPid = spawn(sk_map_combiner, start, [NextPid, NCPUWorkers+NGPUWorkers]),
-  sk_map_partitioner:start(NCPUWorkers, NGPUWorkers, WorkFlowCPU, WorkFlowGPU, CombinerPid).
+  sk_map_man_partitioner:start(NCPUWorkers, NGPUWorkers, WorkFlowCPU, WorkFlowGPU, CombinerPid).

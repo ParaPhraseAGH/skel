@@ -20,25 +20,21 @@
 %%% @end
 %%%----------------------------------------------------------------------------
 
--module(sk_map_partitioner).
+-module(sk_map_auto_partitioner).
 
 -export([
-         start/3,
-         start/4,
-         start/5
+         start/2
         ]).
 
 %% Privete exports
 -export([
-         loop_auto/4,
-         loop_pull_init/3,
-         loop/2
+         loop_auto/4
         ]).
 
 -include("skel.hrl").
 
 
--spec start(atom(), workflow(), pid()) -> pid().
+-spec start(workflow(), pid()) -> pid().
 %% @doc Starts the recursive partitioning of inputs.
 %%
 %% If the number of workers to be used is specified, a list of Pids for those
@@ -54,25 +50,10 @@
 %% application to the Workflow.
 %%
 %% @todo Wait, can't this atom be gotten rid of? The types are sufficiently different.
-start(auto, WorkFlow, CombinerPid) ->
+start(WorkFlow, CombinerPid) ->
   sk_tracer:t(75, self(), {?MODULE, start}, [{combiner, CombinerPid}]),
   proc_lib:spawn( ?MODULE, loop_auto, [decomp_by(), WorkFlow, CombinerPid, []]).
 
--spec start(atom(), workflow(), pos_integer(), pid()) -> pid().
-start(man , WorkFlow, NWorkers, CombinerPid) ->
-  sk_tracer:t(75, self(), {?MODULE, start}, [{combiner, CombinerPid}]),
-  WorkerPids = sk_utils:start_workers(NWorkers, WorkFlow, CombinerPid),
-  proc_lib:spawn(?MODULE, loop, [decomp_by(), WorkerPids]);
-
-start(pull , WorkFlow, NWorkers, CombinerPid) ->
-  sk_tracer:t(75, self(), {?MODULE, start}, [{combiner, CombinerPid}]),
-  proc_lib:spawn(?MODULE, loop_pull_init, [WorkFlow, NWorkers, CombinerPid]).
-
--spec start( pos_integer(), pos_integer(), workflow(), workflow(), pid()) -> pid().
-start(NCPUWorkers, NGPUWorkers, WorkFlowCPU, WorkFlowGPU, CombinerPid) ->
-  sk_tracer:t(75, self(), {?MODULE, start}, [{combiner, CombinerPid}]),
-  WorkerPids = sk_utils:start_workers_hyb(NCPUWorkers, NGPUWorkers, WorkFlowCPU, WorkFlowGPU, CombinerPid),
-  proc_lib:spawn(?MODULE, loop, [man, WorkerPids, CombinerPid]).
 
 -spec loop_auto(data_decomp_fun(), workflow(), pid(), [pid()]) -> 'eos'.
 %% @private
@@ -93,85 +74,6 @@ loop_auto(DataPartitionerFun, WorkFlow, CombinerPid, WorkerPids) ->
       sk_utils:stop_workers(?MODULE, WorkerPids),
       eos
   end.
-
-
--spec loop(data_decomp_fun(), [pid()]) -> 'eos'.
-%% @doc Recursively receives inputs as messages, which are decomposed, and the
-%% resulting messages sent to individual workers. `loop/3' is used in place of
-%% {@link loop/4} when the number of workers is set by the developer.
-loop(DataPartitionerFun, WorkerPids) ->
-  receive
-    {data, _, _} = DataMessage ->
-      PartitionMessages = DataPartitionerFun(DataMessage),
-      Ref = make_ref(),
-      sk_tracer:t(60, self(), {?MODULE, data}, [{ref, Ref}, {input, DataMessage}, {partitions, PartitionMessages}]),
-      dispatch(Ref, length(PartitionMessages), PartitionMessages, WorkerPids),
-      loop(DataPartitionerFun, WorkerPids);
-    {system, eos} ->
-      sk_utils:stop_workers(?MODULE, WorkerPids),
-      eos
-    end.
-
-
-loop_pull_init(WorkFlow, NWorkers, CombinerPid) ->
-  AllWorkers = [sk_map_pulling_worker:start(WorkFlow, CombinerPid) ||
-                 _ <- lists:seq(1,NWorkers)],
-
-  loop_pull([], [], AllWorkers).
-
-loop_pull(WorkData, WatingWorkers, AllWorkers) ->
-  {WorkData2, WatingWorkers2} =  send_data_to_workers(WorkData, WatingWorkers),
-  receive
-    {give_me_work, Worker} ->
-      loop_pull(WorkData2, [Worker | WatingWorkers2], AllWorkers);
-    {data, _, _}  = DataMessage ->
-      NewData = partition(DataMessage),
-      loop_pull(WorkData2 ++ NewData, WatingWorkers2, AllWorkers);
-    {system, eos} ->
-      loop_pull_finish(WorkData2, WatingWorkers2, AllWorkers)
-    end.
-
-
-loop_pull_finish([], _, AllWorkers) ->
-  sk_utils:stop_workers(?MODULE, AllWorkers),
-  eos;
-
-loop_pull_finish(WorkData, WatingWorkers, AllWorkers) ->
-  {WorkData2, WatingWorkers2} =
-    send_data_to_workers(WorkData, WatingWorkers),
-  receive
-    {give_me_work, Worker} ->
-      loop_pull_finish(WorkData2, [Worker | WatingWorkers2], AllWorkers)
-  end.
-
-
-partition({data, Data, Idx}) ->
-  DataMessages = [{data, X, Idx} || X <- Data],
-  Ref = make_ref(),
-  MessageCount = length(Data),
-  {_, List} = lists:foldl(
-                fun(OneMessage, {Counter, Acc} ) ->
-                    {Counter + 1,
-                     [sk_data:push({decomp,
-                                    Ref,
-                                    Counter,
-                                    MessageCount}, OneMessage) | Acc]}
-                end,
-                _CountFrom = {1, []},
-                DataMessages),
-  List.
-
-send_data_to_workers([Data | Datas], [Worker| Workers]) ->
-  Worker ! Data,
-  send_data_to_workers(Datas, Workers);
-
-%% One of those should be empty
-send_data_to_workers(Data, Workers) ->
-  {Data, Workers}.
-
-
-
-
 
 
 
