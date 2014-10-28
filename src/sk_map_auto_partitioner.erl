@@ -48,8 +48,7 @@
 %% Pids or a workflow is received. `CombinerPid' specifies the Pid of the
 %% process that will recompose the partite elements following their
 %% application to the Workflow.
-%%
-%% @todo Wait, can't this atom be gotten rid of? The types are sufficiently different.
+
 start(WorkFlow, CombinerPid) ->
   sk_tracer:t(75, self(), {?MODULE, start}, [{combiner, CombinerPid}]),
   proc_lib:spawn( ?MODULE, loop_auto, [decomp_by(), WorkFlow, CombinerPid, []]).
@@ -65,9 +64,13 @@ loop_auto(DataPartitionerFun, WorkFlow, CombinerPid, WorkerPids) ->
   receive
     {data, _, _} = DataMessage ->
       PartitionMessages = DataPartitionerFun(DataMessage),
-      WorkerPids1 = add_workers(length(PartitionMessages), WorkFlow, CombinerPid, WorkerPids),
-      Ref = make_ref(), %% FIXME not sure what for this ref is
-      sk_tracer:t(60, self(), {?MODULE, data}, [{ref, Ref}, {input, DataMessage}, {partitions, PartitionMessages}]),
+      WorkerPids1 = add_workers(length(PartitionMessages),
+                                WorkFlow,
+                                CombinerPid,
+                                WorkerPids),
+      Ref = make_ref(),
+      sk_tracer:t(60, self(), {?MODULE, data},
+                  [{ref, Ref}, {input, DataMessage}, {partitions, PartitionMessages}]),
       dispatch(Ref, length(PartitionMessages), PartitionMessages, WorkerPids1),
       loop_auto(DataPartitionerFun, WorkFlow, CombinerPid, WorkerPids1);
     {system, eos} ->
@@ -103,7 +106,7 @@ add_workers(_NPartitions, _WorkFlow, _CombinerPid, WorkerPids) ->
   WorkerPids.
 
 
--spec dispatch(reference(), pos_integer(), [data_message(),...], [pid()]) -> 'ok'.
+-spec dispatch(reference(), pos_integer(), [data_message(), ...], [pid()]) -> 'ok'.
 %% @doc Partite elements of input stored in `PartitionMessages' are formatted
 %% and sent to a worker from `WorkerPids'. The reference argument `Ref'
 %% ensures that partite elements from different inputs are not incorrectly
@@ -112,7 +115,7 @@ dispatch(Ref, NPartitions, PartitionMessages, WorkerPids) ->
   dispatch(Ref, NPartitions, 1, PartitionMessages, WorkerPids).
 
 
--spec dispatch(reference(), pos_integer(), pos_integer(), [data_message(),...], [pid()]) -> 'ok'.
+-spec dispatch(reference(), pos_integer(), pos_integer(), [data_message(), ...], [pid()]) -> 'ok'.
 %% @doc Inner-function for {@link dispatch/4}. Recursively sends each message
 %% to a worker, following the addition of references to allow identification
 %% and recomposition.
