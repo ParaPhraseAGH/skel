@@ -33,11 +33,26 @@ map_can_handle_different_size_input_data_test() ->
 map_can_be_given_number_of_workers_as_parameter_test()  ->
   Given = [[0],
            [2,3],
-           [10, 20, 30 ]],
+           [10, 20, 30]],
   Expected = [[0],
-              [4,6],
-              [20, 40, 60 ] ],
+              [4, 6],
+              [20, 40, 60]],
 
   ?assertSameDataInside( Expected,
                          skel:do( [{ map, [ fun double/1 ], _NumberOfWorkers = 8}],
+                                  Given )).
+
+map_pull_as_another_option_test()  ->
+  Given = [[0],
+           [2,3],
+           [10, 20, 30 ]],
+  Expected = [[0],
+              [4, 6],
+              [20, 40, 60]],
+
+  ?assertSameDataInside( Expected,
+                         skel:do( [{ map,
+                                     [ fun double/1 ],
+                                     _NumberOfWorkers = 8,
+                                     pull}],
                                   Given )).

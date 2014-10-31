@@ -12,8 +12,8 @@
 -module(sk_assembler).
 
 -export([
-         run/2
-        ,make/2
+         run/2,
+         make/2
         ]).
 
 -include("skel.hrl").

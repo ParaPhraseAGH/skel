@@ -13,6 +13,7 @@
                    | {cluster,  workflow(), decomp_fun(), recomp_fun()}
                    | {map,      workflow()}
                    | {map,      workflow(), pos_integer()}
+                   | {map,      workflow(), pos_integer(), pull}
                    | {hyb_map,  workflow(), workflow(), pos_integer(), pos_integer()}
                    | {reduce,   reduce_fun(), decomp_fun()}
                    | {feedback, workflow(), filter_fun()}.

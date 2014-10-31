@@ -11,8 +11,13 @@
 %%% 
 %%%   ```skell:run([{reduce, fun?MODULE:reduce/2, fun ?MODULE:id/1}], Inputs)'''
 %%% 
-%%%   Here, we call upon the reduce skeleton to reduce a list of inputs, 
-%%%   denoted `Inputs', using the developer-defined functions `reduce' and `id'. In this example, we presume to sum the elements in a list. Hence, `reduce' takes two arguments and returns their total. Whilst, `id' returns its input sans transformation. We receive the answer in the form of a single-element list as a message from the sink process.
+%%%   Here, we call upon the reduce skeleton to reduce a list of
+%%%   inputs, denoted `Inputs', using the developer-defined functions
+%%%   `reduce' and `id'. In this example, we presume to sum the
+%%%   elements in a list. Hence, `reduce' takes two arguments and
+%%%   returns their total. Whilst, `id' returns its input sans
+%%%   transformation. We receive the answer in the form of a
+%%%   single-element list as a message from the sink process.
 %%%
 %%% @end
 %%%----------------------------------------------------------------------------
@@ -36,7 +41,6 @@
     WorkflowPid :: pid().
 
 start({Reduce, Decomp}, NextPid ) ->
-  io:format("start reduce~n~n"),
   proc_lib:spawn(sk_reduce_decomp, start, [Decomp, Reduce, NextPid]).
 
 
