@@ -9,9 +9,11 @@
                    | {pipe,     workflow()}
                    | {ord,      workflow()}
                    | {farm,     workflow(), pos_integer()}
+                   | {hyb_farm, workflow(), workflow(), pos_integer(), pos_integer()}
                    | {cluster,  workflow(), decomp_fun(), recomp_fun()}
                    | {map,      workflow()}
                    | {map,      workflow(), pos_integer()}
+                   | {hyb_map,  workflow(), workflow(), pos_integer(), pos_integer()}
                    | {reduce,   reduce_fun(), decomp_fun()}
                    | {feedback, workflow(), filter_fun()}.
 % Workflow items (skeletons) and their content. 
@@ -25,8 +27,6 @@
 -type reduce_fun()  :: fun((any(), any()) -> any()). % Any function that reduces two inputs to a single output.
 
 -type filter_fun()  :: fun((any())        -> boolean()). % Any function that determines whether an input matches one or more given criteria.
-
--type maker_fun()   :: fun((pid())        -> pid()). % Any function that spawns a process.
 
 
 
