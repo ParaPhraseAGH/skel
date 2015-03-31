@@ -11,7 +11,7 @@
 
 start(Workflow, Combiner) ->
   Source = self(),
-  proc_lib:spawn(?MODULE, init, [Source, Workflow, Combiner]).
+  proc_lib:spawn_link(?MODULE, init, [Source, Workflow, Combiner]).
 
 
 

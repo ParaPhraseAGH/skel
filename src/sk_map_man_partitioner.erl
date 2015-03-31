@@ -52,13 +52,13 @@
 start(WorkFlow, NWorkers, CombinerPid) ->
   sk_tracer:t(75, self(), {?MODULE, start}, [{combiner, CombinerPid}]),
   WorkerPids = sk_utils:start_workers(NWorkers, WorkFlow, CombinerPid),
-  proc_lib:spawn(?MODULE, loop, [decomp_by(), WorkerPids]).
+  proc_lib:spawn_link(?MODULE, loop, [decomp_by(), WorkerPids]).
 
 -spec start( pos_integer(), pos_integer(), workflow(), workflow(), pid()) -> pid().
 start(NCPUWorkers, NGPUWorkers, WorkFlowCPU, WorkFlowGPU, CombinerPid) ->
   sk_tracer:t(75, self(), {?MODULE, start}, [{combiner, CombinerPid}]),
   WorkerPids = sk_utils:start_workers_hyb(NCPUWorkers, NGPUWorkers, WorkFlowCPU, WorkFlowGPU, CombinerPid),
-  proc_lib:spawn(?MODULE, loop, [man, WorkerPids, CombinerPid]).
+  proc_lib:spawn_link(?MODULE, loop, [man, WorkerPids, CombinerPid]).
 
 
 

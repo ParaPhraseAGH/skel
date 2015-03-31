@@ -46,7 +46,7 @@
 %%  final results are sent.
 -spec start_acc() -> pid().
 start_acc() ->
-  proc_lib:spawn( ?MODULE, start_acc, [ self() ]).
+  proc_lib:spawn_link( ?MODULE, start_acc, [ self() ]).
 
 -spec start_acc(pid()) -> 'eos'.
 %% @doc Sets the sink process to receive messages from other processes.
@@ -74,7 +74,7 @@ loop_acc(NextPid, Results) ->
 %% specified module <tt>OutputMod</tt>.
 -spec start_mod( module() ) -> pid().
 start_mod( OutputMod ) ->
-  proc_lib:spawn(?MODULE, start_mod, [ OutputMod, self()]).
+  proc_lib:spawn_link(?MODULE, start_mod, [ OutputMod, self()]).
 
 
 %% @doc Initiates loop to receive messages from child processes, passing 

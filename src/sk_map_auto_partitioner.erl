@@ -51,7 +51,7 @@
 
 start(WorkFlow, CombinerPid) ->
   sk_tracer:t(75, self(), {?MODULE, start}, [{combiner, CombinerPid}]),
-  proc_lib:spawn( ?MODULE, loop_auto, [decomp_by(), WorkFlow, CombinerPid, []]).
+  proc_lib:spawn_link( ?MODULE, loop_auto, [decomp_by(), WorkFlow, CombinerPid, []]).
 
 
 -spec loop_auto(data_decomp_fun(), workflow(), pid(), [pid()]) -> 'eos'.

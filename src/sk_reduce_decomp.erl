@@ -30,7 +30,7 @@ start(Decomp, Reduce, NextPid) ->
   DataDecompFun = sk_data:decomp_by(Decomp),
   DataReduceFun = sk_data:reduce_with(Reduce),
   PidPools = dict:new(),
-  NewReducer = proc_lib:spawn(sk_reduce_reducer, start, [DataReduceFun, NextPid]),
+  NewReducer = proc_lib:spawn_link(sk_reduce_reducer, start, [DataReduceFun, NextPid]),
   PidPools1 = dict:store(0, [NewReducer], PidPools),
   loop(DataDecompFun, DataReduceFun, NextPid, PidPools1).
 
@@ -59,7 +59,9 @@ start_reducers(NPartitions, DataReduceFun, NextPid, PidPools) ->
   if
     TopPool < RequiredPool ->
       TopPoolPids = dict:fetch(TopPool, PidPools),
-      NewPids = [proc_lib:spawn(sk_reduce_reducer, start, [DataReduceFun, NextPoolPid])
+      NewPids = [proc_lib:spawn_link(sk_reduce_reducer, 
+                                     start, 
+                                     [DataReduceFun, NextPoolPid])
                  || NextPoolPid <- TopPoolPids, _ <- [1,2]],
       PidPools1 = dict:store(TopPool+1, NewPids, PidPools),
       start_reducers(NPartitions, DataReduceFun, NextPid, PidPools1);

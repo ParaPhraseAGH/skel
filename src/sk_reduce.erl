@@ -41,6 +41,6 @@
     WorkflowPid :: pid().
 
 start({Reduce, Decomp}, NextPid ) ->
-  proc_lib:spawn(sk_reduce_decomp, start, [Decomp, Reduce, NextPid]).
+  proc_lib:spawn_link(sk_reduce_decomp, start, [Decomp, Reduce, NextPid]).
 
 

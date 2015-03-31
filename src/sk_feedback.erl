@@ -42,11 +42,11 @@
 
 start({WorkFlow, FilterFun}, NextPid ) ->
     Ref = make_ref(),
-    CounterPid = proc_lib:spawn(sk_feedback_bicounter, start, []),
-    FilterPid = proc_lib:spawn(sk_feedback_filter,
-                               start,
-                               [FilterFun, Ref, CounterPid, NextPid]),
+    CounterPid = proc_lib:spawn_link(sk_feedback_bicounter, start, []),
+    FilterPid = proc_lib:spawn_link(sk_feedback_filter,
+                                    start,
+                                    [FilterFun, Ref, CounterPid, NextPid]),
     WorkerPid = sk_utils:start_worker(WorkFlow, FilterPid),
-    proc_lib:spawn(sk_feedback_receiver,
-                   start,
-                   [Ref, CounterPid, FilterPid, WorkerPid]).
+    proc_lib:spawn_link(sk_feedback_receiver,
+                        start,
+                        [Ref, CounterPid, FilterPid, WorkerPid]).

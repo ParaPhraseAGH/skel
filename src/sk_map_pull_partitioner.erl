@@ -52,7 +52,7 @@
 %% @todo Wait, can't this atom be gotten rid of? The types are sufficiently different.
 start(WorkFlow, NWorkers, CombinerPid) ->
   sk_tracer:t(75, self(), {?MODULE, start}, [{combiner, CombinerPid}]),
-  proc_lib:spawn(?MODULE, loop_pull_init, [WorkFlow, NWorkers, CombinerPid]).
+  proc_lib:spawn_link(?MODULE, loop_pull_init, [WorkFlow, NWorkers, CombinerPid]).
 
 
 loop_pull_init(WorkFlow, NWorkers, CombinerPid) ->

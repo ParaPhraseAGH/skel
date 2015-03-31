@@ -40,7 +40,7 @@
 -spec start({worker_fun()}, pid()) ->
                pid().
 start({WorkerFun},NextPid ) ->
-  proc_lib:spawn(?MODULE, init, [WorkerFun, NextPid]).
+  proc_lib:spawn_link(?MODULE, init, [WorkerFun, NextPid]).
 
 
 %% @doc Starts the worker process' task. Recursively receives the worker 

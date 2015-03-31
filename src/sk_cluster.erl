@@ -50,7 +50,7 @@
 -spec start({workflow(), decomp_fun(), recomp_fun()}, pid()) ->
                pid().
 start({WorkFlow, Decomp, Recomp}, NextPid) ->
-    RecompPid = proc_lib:spawn(sk_cluster_recomp, start, [Recomp, NextPid]),
+    RecompPid = proc_lib:spawn_link(sk_cluster_recomp, start, [Recomp, NextPid]),
     WorkerPid = sk_utils:start_worker(WorkFlow, RecompPid),
-    proc_lib:spawn(sk_cluster_decomp, start, [Decomp, WorkerPid]).
+    proc_lib:spawn_link(sk_cluster_decomp, start, [Decomp, WorkerPid]).
 

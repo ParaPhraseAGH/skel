@@ -37,7 +37,7 @@
 
 -spec start(input(), pid() | atom ()) -> pid().
 start( Input, NextPid ) ->
-  proc_lib:spawn( ?MODULE, init, [ Input, NextPid]).
+  proc_lib:spawn_link( ?MODULE, init, [ Input, NextPid]).
 
 %% @doc Transmits each input in <tt>Input</tt> to the process <tt>NextPid</tt>.
 %% @todo add documentation for the callback loop
